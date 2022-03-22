@@ -35,7 +35,6 @@ function createWindow() {
     mainWindow.webContents.openDevTools();
 
     mainWindow.on('close', function() {
-        me.mainWindow = null;
     });
 
     // mainWindow.webContents.on('did-finish-load', () => {
@@ -60,12 +59,6 @@ function createWindow() {
             return;
         }
     });
-
-    // mainWindow.loadURL(url.format({
-    //     pathname: path.join(__dirname, 'index.html'),
-    //     protocol: 'file:',
-    //     slashes: true
-    // }));
 
 
     ipcMain.on('open-exteral-url', (event, targetUrl, targetTitle) => {
@@ -98,16 +91,24 @@ function createWindow() {
         });
 
         mediaWindow.on('did-finish_load', () => {
-            mediaWindow.setTitle(targetTitle);
+            // setTimeout(() => {
+            //     mediaWindow.setTitle(targetTitle);
+            // }, 2000);
         });
+
+        // mediaWindow.webContents.session.webRequest.onBeforeRequest(async ({url}, callback) => {
+        //     console.log("mediaWindow-onBeforeRequest:", url)
+        //     callback({
+        //         redirectURL: url
+        //     })
+        // });
+
+        mediaWindow.webContents.on('page-title-updated', () => {
+            mediaWindow.setTitle(targetTitle);
+        })
 
         mediaWindow.loadURL(targetUrl);
 
-        setTimeout(() => {
-            console.log("start======", targetTitle)
-            mediaWindow.setTitle(targetTitle);
-            console.log("end======")
-        }, 2000);
 
         allRendererWindow.push(mediaWindow);
 
@@ -116,10 +117,6 @@ function createWindow() {
     ipcMain.on('close-all-exteral-window', (event) => {
         let rendererWindow = allRendererWindow.pop();
         while(rendererWindow) {
-            // console.log('rendererWindow:', rendererWindow);
-            // if(!rendererWindow.isDestroyed()) {
-            //     rendererWindow.destory();
-            // }
             rendererWindow.close();
             rendererWindow = allRendererWindow.pop();
             
@@ -138,13 +135,6 @@ app.on('window-all-closed', function() {
         app.quit();
     }
 });
-
-// app.on('activate', function (){
-//     if(mainWindow == null) {
-//         createWindow();
-//     }
-// })
-
 
 app.on("certificate-error", (event, webContents, url, error, certificate, callback) => {
     event.preventDefault();
